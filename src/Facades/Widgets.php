@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Honed\Widget\WidgetManager extend(string $driver, \Closure(\Illuminate\Contracts\Container\Container, array<string, mixed>):mixed $callback) Register a custom driver creator Closure.
  * @method static \Honed\Widget\WidgetManager setContainer(\Illuminate\Container\Container $container) Set the container instance used by the manager.
  * @method static mixed inertia(string|null $scope = null, string|null $group = null) Get the widgets for an inertia page.
- * 
  * @method static mixed get(string|null $scope = null, string|null $group = null) Get all widgets for the given scope and group.
  * @method static mixed all(string|null $scope = null) Get all widgets for the given scope.
  * @method static bool has(string $key, string|null $scope = null, string|null $group = null) Determine if a widget exists in the given scope and group.
@@ -28,7 +27,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static mixed decrement(string $key, int|float $amount = 1, string|null $scope = null, string|null $group = null) Decrement the value of a widget in the given scope and group.
  * @method static bool forget(string $key, string|null $scope = null, string|null $group = null) Remove a widget from the given scope and group.
  * @method static bool flush(string|null $scope = null, string|null $group = null) Remove all widgets from the given scope and group.
- * 
+ *
  * @see \Honed\Widget\WidgetManager
  */
 class Widgets extends Facade

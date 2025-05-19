@@ -110,7 +110,7 @@ class DatabaseDriver implements Driver
             ], [
                 'group',
                 'name',
-                'scope'
+                'scope',
             ], [
                 'order',
                 self::UPDATED_AT,
@@ -143,7 +143,6 @@ class DatabaseDriver implements Driver
             ->where('group', $group)
             ->delete();
     }
-    
 
     /**
      * Create a new table query.
@@ -167,5 +166,5 @@ class DatabaseDriver implements Driver
         return $this->db->connection(
             $this->config->get("widget.drivers.{$this->name}.connection") ?? null
         );
-    }    
+    }
 }
