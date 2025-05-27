@@ -3,7 +3,6 @@
 namespace Honed\Widget\Concerns;
 
 use Honed\Widget\Facades\Widgets;
-use Honed\Widget\WidgetManager;
 
 trait HasWidgetKeys
 {
