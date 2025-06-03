@@ -40,10 +40,10 @@ class WidgetCacheCommand extends Command
 
     /**
      * Get the widgets that should be cached.
-     * 
+     *
      * @return array
      */
-        /**
+    /**
      * Get all of the events and listeners configured for the application.
      *
      * @return array

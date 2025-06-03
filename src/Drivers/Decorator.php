@@ -46,11 +46,11 @@ class Decorator implements Driver
 
     /**
      * Create a new driver decorator instance.
-     * 
-     * @param string $name
-     * @param \Honed\Widget\Contracts\Driver $driver
-     * @param (callable():mixed)|null $defaultScopeResolver
-     * @param \Illuminate\Contracts\Container\Container $container
+     *
+     * @param  string  $name
+     * @param  \Honed\Widget\Contracts\Driver  $driver
+     * @param  (callable():mixed)|null  $defaultScopeResolver
+     * @param  \Illuminate\Contracts\Container\Container  $container
      */
     public function __construct(
         $name,
@@ -102,7 +102,7 @@ class Decorator implements Driver
         $outcome = $this->driver->update($widget, $scope, $group, $order);
 
         Event::dispatch(new WidgetUpdated($widget, $scope, $group, $order));
-        
+
         return $outcome;
 
     }
@@ -137,12 +137,12 @@ class Decorator implements Driver
     // public function purge(...$widgets)
     // {
     //     $this->driver->purge(...$widgets);
-    // 
+    //
 
     /**
      * Retrieve the widget's class.
-     * 
-     * @param string $name
+     *
+     * @param  string  $name
      * @return \Honed\Widget\Contracts\Widget
      */
     public function instance($name)
@@ -152,8 +152,8 @@ class Decorator implements Driver
 
     /**
      * Retrieve the widget's name.
-     * 
-     * @param string $widget
+     *
+     * @param  string  $widget
      * @return string
      */
     public function name($widget)
@@ -163,8 +163,8 @@ class Decorator implements Driver
 
     /**
      * Resolve the widget by name.
-     * 
-     * @param string $widget
+     *
+     * @param  string  $widget
      * @return string
      */
     protected function resolveWidget($widget)
@@ -197,7 +197,7 @@ class Decorator implements Driver
 
     /**
      * Get the underlying driver instance.
-     * 
+     *
      * @return \Honed\Widget\Contracts\Driver
      */
     public function getDriver()
@@ -208,7 +208,7 @@ class Decorator implements Driver
     /**
      * Set the container instance used by the decorator.
      *
-     * @param \Illuminate\Contracts\Container\Container $container
+     * @param  \Illuminate\Contracts\Container\Container  $container
      * @return $this
      */
     public function setContainer($container)

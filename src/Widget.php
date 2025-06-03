@@ -8,29 +8,28 @@ abstract class Widget
 {
     /**
      * The unique name of the widget across your application's widgets.
-     * 
+     *
      * @var string|null
      */
     protected $name;
 
     /**
      * The callback to guess the widget name.
-     * 
+     *
      * @var (callable(static):string)|null
      */
     protected static $guessWidgetNameUsing;
 
-
     /**
      * Retrieve the value of the widget.
-     * 
+     *
      * @return mixed
      */
     abstract public function getValue();
 
     /**
      * Get the name of the widget to be used.
-     * 
+     *
      * @return string|null
      */
     public function name()
@@ -40,7 +39,7 @@ abstract class Widget
 
     /**
      * Get the name of the widget to be used.
-     * 
+     *
      * @return string
      */
     public function getName()
@@ -50,7 +49,7 @@ abstract class Widget
 
     /**
      * Guess the widget name.
-     * 
+     *
      * @return string
      */
     public function guessWidgetName()
@@ -67,8 +66,8 @@ abstract class Widget
 
     /**
      * Set the callback to guess the widget name.
-     * 
-     * @param callable(static):string $callback
+     *
+     * @param  callable(static):string  $callback
      * @return void
      */
     public static function guessWidgetNameUsing($callback)
