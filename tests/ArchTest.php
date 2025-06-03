@@ -26,11 +26,13 @@ arch('contracts')
 arch('drivers')
     ->expect('Honed\Widget\Drivers')
     ->toImplement('Honed\Widget\Contracts\Driver');
-
+    
 arch('events')
-        ->expect('Honed\Widget\Events')
-        ->toBeClasses();
+    ->expect('Honed\Widget\Events')
+    ->toBeClasses();
 
 arch('not strict')
     ->expect('Honed\Widget')
     ->not->toUseStrictTypes();
+
+    

@@ -5,6 +5,7 @@ namespace Honed\Widget\Commands;
 use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Collection;
 use ReflectionFunction;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -83,6 +84,7 @@ class WidgetListCommand extends Command
     /**
      * Display the events and their listeners for the CLI.
      *
+     * @param  \Illuminate\Support\Collection  $events
      * @return void
      */
     protected function displayForCli(Collection $events)
@@ -166,6 +168,7 @@ class WidgetListCommand extends Command
     /**
      * Get a displayable string representation of a Closure listener.
      *
+     * @param  \Closure  $rawListener
      * @return string
      */
     protected function stringifyClosure(Closure $rawListener)
