@@ -10,7 +10,7 @@ use Workbench\App\Models\User;
 class UserCountWidget extends Widget
 {
     protected $name = 'user-count';
-    
+
     /**
      * {@inheritdoc}
      */

@@ -23,11 +23,11 @@ class CannotSerializeScopeException extends RuntimeException
      * Throw a new invalid scope exception.
      *
      * @return never
-     * 
+     *
      * @throws static
      */
     public static function throw()
     {
-        throw new self();
+        throw new self;
     }
 }
