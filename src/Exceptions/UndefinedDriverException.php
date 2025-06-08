@@ -8,7 +8,7 @@ class UndefinedDriverException extends InvalidArgumentException
 {
     /**
      * Create a new undefined driver exception.
-     *
+     * 
      * @param  string  $driver
      */
     public function __construct($driver)
@@ -23,7 +23,7 @@ class UndefinedDriverException extends InvalidArgumentException
      *
      * @param  string  $driver
      * @return never
-     *
+     * 
      * @throws static
      */
     public static function throw($driver)

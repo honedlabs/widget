@@ -17,7 +17,7 @@ abstract class WidgetMigration extends Migration
         $connection = config('widget.drivers.database.connection');
 
         // @phpstan-ignore-next-line return.type
-        return ($connection === null || $connection === 'null')
+        return ($connection === null || $connection === 'null') 
             ? config('database.default')
             : $connection;
     }
