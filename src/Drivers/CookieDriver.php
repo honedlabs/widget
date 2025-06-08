@@ -23,7 +23,7 @@ class CookieDriver implements Driver
      * @var \Illuminate\Cookie\CookieJar
      */
     protected $cookies;
-    
+
     public function __construct(
         CookieJar $cookies,
         Dispatcher $events,
@@ -36,13 +36,13 @@ class CookieDriver implements Driver
 
     /**
      * Cookie name is: group.scope
-     * 
+     *
      * Value is [
      *  widget => order,
      * ]
      */
 
-        /**
+    /**
      * {@inheritdoc}
      */
     public function get($scope, $group = null)
@@ -53,33 +53,20 @@ class CookieDriver implements Driver
     /**
      * {@inheritdoc}
      */
-    public function exists($widget, $scope, $group = null)
-    {
-
-    }
+    public function exists($widget, $scope, $group = null) {}
 
     /**
      * {@inheritdoc}
      */
-    public function set($widget, $scope, $group = null, $order = 0)
-    {
-
-    }
+    public function set($widget, $scope, $group = null, $order = 0) {}
 
     /**
      * {@inheritdoc}
      */
-    public function update($widget, $scope, $group = null, $order = 0)
-    {
-
-    }
+    public function update($widget, $scope, $group = null, $order = 0) {}
 
     /**
      * {@inheritdoc}
      */
-    public function delete($widget, $scope, $group = null)
-    {
-
-    }
-    
+    public function delete($widget, $scope, $group = null) {}
 }
