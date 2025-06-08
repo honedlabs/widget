@@ -54,13 +54,13 @@ class DiscoverWidgets
 
     /**
      * Determine if the widget is invalid.
-     *
+     * 
      * @param  class-string  $widget
      * @return bool
      */
     protected static function invalidWidget($widget)
     {
-        return ! class_exists($widget)
+        return ! class_exists($widget) 
             || ! is_subclass_of($widget, Widget::class)
             || ! (new ReflectionClass($widget))->isInstantiable();
     }
@@ -68,6 +68,7 @@ class DiscoverWidgets
     /**
      * Extract the class name from the given file path.
      *
+     * @param  \SplFileInfo  $file
      * @param  string  $basePath
      * @return class-string
      */

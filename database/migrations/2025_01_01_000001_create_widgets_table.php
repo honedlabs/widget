@@ -1,8 +1,8 @@
 <?php
 
-use Honed\Widget\Migrations\WidgetMigration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Honed\Widget\Migrations\WidgetMigration;
 
 return new class extends WidgetMigration
 {

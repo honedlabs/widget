@@ -5,8 +5,8 @@ namespace Honed\Widget\Drivers;
 use Honed\Widget\Concerns\HasWidgetKeys;
 use Honed\Widget\Contracts\Driver;
 use Illuminate\Cache\CacheManager;
-use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Config\Repository;
 
 class CacheDriver implements Driver
 {
@@ -59,22 +59,34 @@ class CacheDriver implements Driver
     /**
      * {@inheritdoc}
      */
-    public function exists($widget, $scope, $group = null) {}
+    public function exists($widget, $scope, $group = null)
+    {
+
+    }
 
     /**
      * {@inheritdoc}
      */
-    public function set($widget, $scope, $group = null, $order = 0) {}
+    public function set($widget, $scope, $group = null, $order = 0)
+    {
+
+    }
 
     /**
      * {@inheritdoc}
      */
-    public function update($widget, $scope, $group = null, $order = 0) {}
+    public function update($widget, $scope, $group = null, $order = 0)
+    {
+
+    }
 
     /**
      * {@inheritdoc}
      */
-    public function delete($widget, $scope, $group = null) {}
+    public function delete($widget, $scope, $group = null)
+    {
+
+    } 
 
     public function getDuration()
     {
@@ -88,9 +100,10 @@ class CacheDriver implements Driver
 
     /**
      * Cache key is: group.scope
-     *
+     * 
      * Value is [
      *  widget => order,
      * ]
      */
+    
 }

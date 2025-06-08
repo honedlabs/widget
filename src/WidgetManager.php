@@ -3,15 +3,15 @@
 namespace Honed\Widget;
 
 use Honed\Widget\Contracts\SerializesScope;
+use Honed\Widget\Drivers\Decorator;
 use Honed\Widget\Drivers\ArrayDriver;
 use Honed\Widget\Drivers\CacheDriver;
 use Honed\Widget\Drivers\CookieDriver;
 use Honed\Widget\Drivers\DatabaseDriver;
-use Honed\Widget\Drivers\Decorator;
 use Honed\Widget\Exceptions\CannotSerializeScopeException;
+use Illuminate\Contracts\Container\Container;
 use Honed\Widget\Exceptions\InvalidDriverException;
 use Honed\Widget\Exceptions\UndefinedDriverException;
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Inertia\Inertia;
 
@@ -29,7 +29,7 @@ class WidgetManager
 
     /**
      * The array of resolved Widget drivers.
-     *
+     * 
      * @var array<string, \Honed\Widget\Drivers\Decorator>
      */
     protected $drivers = [];
@@ -43,7 +43,7 @@ class WidgetManager
 
     /**
      * The default scope resolver.
-     *
+     * 
      * @var (callable(string):mixed)|null
      */
     protected $defaultScopeResolver;
@@ -51,7 +51,7 @@ class WidgetManager
     /**
      * Whether the Eloquent "morph map" should be used when serializing
      * the widget.
-     *
+     * 
      * @var bool
      */
     protected $useMorphMap = false;
@@ -68,10 +68,10 @@ class WidgetManager
 
     /**
      * Get a Widget driver instance by name.
-     *
-     * @param  string|null  $name
+     * 
+     * @param string|null $name
      * @return \Honed\Widget\Drivers\Decorator
-     *
+     * 
      * @throws \Honed\Widget\Exceptions\UndefinedDriverException
      * @throws \Honed\Widget\Exceptions\InvalidDriverException
      */
@@ -87,7 +87,7 @@ class WidgetManager
      *
      * @param  string  $name
      * @return \Honed\Widget\Drivers\Decorator
-     *
+     * 
      * @throws \Honed\Widget\Exceptions\UndefinedDriverException
      * @throws \Honed\Widget\Exceptions\InvalidDriverException
      */
@@ -140,7 +140,7 @@ class WidgetManager
     /**
      * Call a custom driver.
      *
-     * @param  array<string, mixed>  $config
+     * @param array<string, mixed> $config
      * @return \Honed\Widget\Contracts\Driver
      */
     protected function callCustomDriver($config)
@@ -167,7 +167,7 @@ class WidgetManager
 
     /**
      * Create an instance of the cache driver.
-     *
+     * 
      * @return \Honed\Widget\Drivers\CacheDriver
      */
     public function createCacheDriver()
@@ -183,10 +183,10 @@ class WidgetManager
 
         return new CacheDriver($cache, $events, $config);
     }
-
+    
     /**
      * Create an instance of the cookie driver.
-     *
+     * 
      * @return \Honed\Widget\Drivers\CookieDriver
      */
     public function createCookieDriver()
@@ -206,8 +206,8 @@ class WidgetManager
     /**
      * Create an instance of the database driver.
      *
-     * @param  array<string, mixed>  $config
-     * @param  string  $name
+     * @param array<string, mixed> $config
+     * @param string $name
      * @return \Honed\Widget\Drivers\DatabaseDriver
      */
     public function createDatabaseDriver($config, $name)
@@ -247,7 +247,7 @@ class WidgetManager
      *
      * @param  mixed  $scope
      * @return string
-     *
+     * 
      * @throws \Honed\Widget\Exceptions\CannotSerializeScopeException
      */
     public function serializeScope($scope)
@@ -296,7 +296,7 @@ class WidgetManager
     /**
      * Get the driver configuration.
      *
-     * @param  string  $name
+     * @param string $name
      * @return array<string, mixed>|null
      */
     public function getConfig($name)
@@ -400,9 +400,9 @@ class WidgetManager
 
     /**
      * Get the widgets for an inertia page.
-     *
-     * @param  string|null  $scope
-     * @param  string|null  $group
+     * 
+     * @param string|null $scope
+     * @param string|null $group
      * @return mixed
      */
     public function inertia($scope = null, $group = null)
@@ -418,7 +418,7 @@ class WidgetManager
 
     /**
      * Get the inertia retrieval method.
-     *
+     * 
      * @return string
      */
     protected function getInertia()

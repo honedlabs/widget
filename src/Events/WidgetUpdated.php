@@ -2,4 +2,6 @@
 
 namespace Honed\Widget\Events;
 
-class WidgetUpdated {}
+class WidgetUpdated
+{
+}
