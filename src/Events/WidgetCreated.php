@@ -2,6 +2,4 @@
 
 namespace Honed\Widget\Events;
 
-class WidgetCreated
-{
-}
+class WidgetCreated {}
