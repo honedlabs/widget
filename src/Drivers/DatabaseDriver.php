@@ -1,30 +1,35 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Drivers;
 
+use Honed\Widget\Concerns\InteractsWithDatabase;
+use Honed\Widget\Concerns\Resolvable;
 use Honed\Widget\Contracts\Driver;
-use Honed\Widget\Facades\Widgets;
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Events\Dispatcher;
+use Honed\Widget\QueryBuilder;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
 
 class DatabaseDriver implements Driver
 {
-    /**
-     * The database connection.
-     *
-     * @var \Illuminate\Database\DatabaseManager
-     */
-    protected $db;
+    use InteractsWithDatabase;
+    use Resolvable;
 
     /**
-     * The user configuration.
+     * The name of the "created at" column.
      *
-     * @var \Illuminate\Contracts\Config\Repository
+     * @var string|null
      */
-    protected $config;
+    public const CREATED_AT = 'created_at';
+
+    /**
+     * The name of the "updated at" column.
+     *
+     * @var string|null
+     */
+    public const UPDATED_AT = 'updated_at';
 
     /**
      * The store's name.
@@ -34,100 +39,52 @@ class DatabaseDriver implements Driver
     protected $name;
 
     /**
-     * The event dispatcher.
+     * The database connection.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var DatabaseManager
      */
-    protected $events;
+    protected $db;
 
     /**
-     * The name of the "created at" column.
-     *
-     * @var string
+     * Create a new database driver instance.
      */
-    const CREATED_AT = 'created_at';
-
-    /**
-     * The name of the "updated at" column.
-     *
-     * @var string
-     */
-    const UPDATED_AT = 'updated_at';
-
-    /**
-     * Create a new driver instance.
-     *
-     * @return void
-     */
-    public function __construct(
-        DatabaseManager $db,
-        Dispatcher $events,
-        Repository $config,
-        string $name
-    ) {
-        $this->db = $db;
-        $this->events = $events;
-        $this->config = $config;
+    public function __construct(string $name, DatabaseManager $db)
+    {
         $this->name = $name;
+        $this->db = $db;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function get($scope, $group = null)
+    public function get(mixed $scope): array
     {
         return $this->newQuery()
-            ->where('scope', Widgets::serializeScope($scope))
-            ->where('group', $group)
-            ->get();
+            ->scope($scope)
+            ->get()
+            ->all();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function exists($widget, $scope, $group = null)
-    {
-        return $this->newQuery()
-            ->where('widget', $widget)
-            ->where('scope', Widgets::serializeScope($scope))
-            ->where('group', $group)
-            ->exists();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function set($widget, $scope, $group = null, $order = 0)
+    public function set(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): void
     {
         $this->newQuery()
-            ->upsert([
-                'group' => $group,
-                'name' => $widget,
-                'scope' => Widgets::serializeScope($scope),
-                'order' => $order,
-                self::CREATED_AT => $now = Carbon::now(),
-                self::UPDATED_AT => $now,
-            ], [
-                'group',
-                'name',
-                'scope',
-            ], [
-                'order',
-                self::UPDATED_AT,
-            ]);
+            ->insert($this->fill(compact('widget', 'scope', 'data', 'position')));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function update($widget, $scope, $group = null, $order = 0)
+    public function update(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): bool
     {
         return (bool) $this->newQuery()
-            ->where('name', $widget)
-            ->where('scope', Widgets::serializeScope($scope))
-            ->where('group', $group)
+            ->scope($scope)
+            ->widget($widget)
             ->update([
-                'order' => $order,
+                'data' => $data,
+                'position' => $position,
                 self::UPDATED_AT => Carbon::now(),
             ]);
     }
@@ -135,36 +92,46 @@ class DatabaseDriver implements Driver
     /**
      * {@inheritdoc}
      */
-    public function delete($widget, $scope, $group = null)
+    public function delete(mixed $widget, mixed $scope): bool
     {
         return (bool) $this->newQuery()
-            ->where('name', $widget)
-            ->where('scope', Widgets::serializeScope($scope))
-            ->where('group', $group)
+            ->scope($scope)
+            ->widget($widget)
             ->delete();
     }
 
     /**
-     * Create a new table query.
+     * Create an array of values to be inserted.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @param  array{widget: mixed, scope: mixed, data: mixed, position: mixed}  $values
+     * @return array<string, mixed>
      */
-    protected function newQuery()
+    protected function fill(array $values): array
     {
-        return $this->connection()->table(
-            $this->config->get("widget.drivers.{$this->name}.table") ?? 'widgets'
-        );
+        return [
+            'widget' => $this->resolveWidget($values['widget']),
+            'scope' => $this->resolveScope($values['scope']),
+            'data' => json_encode($values['data'], JSON_THROW_ON_ERROR),
+            'position' => $values['position'],
+            self::CREATED_AT => $now = Carbon::now(),
+            self::UPDATED_AT => $now,
+        ];
+    }
+
+    /**
+     * Create a new table query.
+     */
+    protected function newQuery(): QueryBuilder
+    {
+        return (new QueryBuilder($this->connection()))
+            ->from($this->getTableName());
     }
 
     /**
      * The database connection.
-     *
-     * @return \Illuminate\Database\Connection
      */
-    protected function connection()
+    protected function connection(): Connection
     {
-        return $this->db->connection(
-            $this->config->get("widget.drivers.{$this->name}.connection") ?? null
-        );
+        return $this->db->connection($this->getConnectionName());
     }
 }

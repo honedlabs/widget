@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget;
 
 use Honed\Widget\Commands\WidgetCacheCommand;
 use Honed\Widget\Commands\WidgetClearCommand;
 use Honed\Widget\Commands\WidgetListCommand;
 use Honed\Widget\Commands\WidgetMakeCommand;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\LazyCollection;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +18,7 @@ class WidgetServiceProvider extends ServiceProvider
     /**
      * The widgets to register.
      *
-     * @var array<int, class-string<\Honed\Widget\Widget>>
+     * @var array<string, class-string<Widget>>
      */
     protected $widgets = [];
 
@@ -34,37 +37,91 @@ class WidgetServiceProvider extends ServiceProvider
     protected static $widgetDiscoveryPaths;
 
     /**
+     * The base path to be used during widget discovery.
+     *
+     * @var string|null
+     */
+    protected static $widgetDiscoveryBasePath;
+
+    /**
+     * Add the given widget discovery paths to the application's widget discovery paths.
+     *
+     * @param  string|iterable<int, string>  $paths
+     */
+    public static function addWidgetDiscoveryPaths(iterable|string $paths): void
+    {
+        static::$widgetDiscoveryPaths = (new LazyCollection(static::$widgetDiscoveryPaths))
+            ->merge(is_string($paths) ? [$paths] : $paths)
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Get the widget discovery paths.
+     *
+     * @return iterable<int, string>
+     */
+    public static function getWidgetDiscoveryPaths(): iterable
+    {
+        return static::$widgetDiscoveryPaths ?? [];
+    }
+
+    /**
+     * Set the widget discovery paths.
+     *
+     * @param  iterable<int, string>  $paths
+     */
+    public static function setWidgetDiscoveryPaths(iterable $paths): void
+    {
+        static::$widgetDiscoveryPaths = $paths;
+    }
+
+    /**
+     * Get the base path to be used during widget discovery.
+     */
+    public static function getWidgetDiscoveryBasePath(): string
+    {
+        return static::$widgetDiscoveryBasePath ?? base_path();
+    }
+
+    /**
+     * Set the base path to be used during widget discovery.
+     */
+    public static function setWidgetDiscoveryBasePath(string $path): void
+    {
+        static::$widgetDiscoveryBasePath = $path;
+    }
+
+    /**
+     * Disable widget discovery for the application.
+     */
+    public static function disableWidgetDiscovery(): void
+    {
+        static::$shouldDiscoverWidgets = false;
+    }
+
+    /**
      * Register services.
      */
     public function register(): void
     {
-        /** @var \Illuminate\Foundation\Application $app */
-        $app = $this->app;
-
-        $app->singleton(WidgetManager::class, fn ($app) => new WidgetManager($app));
+        $this->getApp()->singleton(WidgetManager::class, fn ($app) => new WidgetManager($app));
 
         $this->mergeConfigFrom(__DIR__.'/../config/widget.php', 'widget');
 
-        App::macro('getCachedWidgetsPath', function () {
-            /** @var \Illuminate\Foundation\Application $this */
-            return $this->normalizeCachePath('APP_WIDGETS_CACHE', 'cache/widgets.php');
+        App::macro('getCachedWidgetsPath', function (): string {
+            /** @var Application $this */
+
+            return $this->normalizeCachePath('APP_WIDGETS_CACHE', 'cache/widgets.php'); // @phpstan-ignore-line method.protected
         });
 
-        App::macro('widgetsAreCached', function () {
-            /** @var \Illuminate\Foundation\Application $this */
-            return $this->files->exists($this->getCachedWidgetsPath());
-        });
+        App::macro('widgetsAreCached', function (): bool {
+            /** @var Application $this */
 
-        $this->booting(function () {
-            $widgets = $this->getWidgets();
+            /** @var \Illuminate\Filesystem\Filesystem $files */
+            $files = $this->files; // @phpstan-ignore-line varTag.nativeType
 
-            foreach ($widgets as $widget) {
-
-            }
-
-            foreach ($this->widgets as $widget) {
-                $this->app->make($widget)::register();
-            }
+            return $files->exists($this->getCachedWidgetsPath());
         });
     }
 
@@ -73,9 +130,9 @@ class WidgetServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->optimizes(WidgetCacheCommand::class);
-
         if ($this->app->runningInConsole()) {
+            $this->optimizes(WidgetCacheCommand::class);
+
             $this->offerPublishing();
 
             $this->commands([
@@ -88,11 +145,84 @@ class WidgetServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the migrations and publishing for the package.
+     * Get the discovered widgets for the application.
      *
-     * @return void
+     * @return array<string, class-string<Widget>>
      */
-    protected function offerPublishing()
+    public function getWidgets(): array
+    {
+        if ($this->getApp()->widgetsAreCached()) {
+            /** @var array<string, class-string<Widget>>|null */
+            $cache = require $this->getApp()->getCachedWidgetsPath();
+
+            return is_array($cache) ? $cache : [];
+        }
+
+        return array_merge_recursive(
+            $this->discoveredWidgets(),
+            $this->widgets()
+        );
+    }
+
+    /**
+     * Register a widget with the service provider.
+     *
+     * @param  class-string<Widget>|Widget  $widget
+     */
+    public function addWidget(string|Widget $widget): void
+    {
+        $widget = is_string($widget) ? $this->getApp()->make($widget) : $widget;
+
+        if (! isset($this->widgets[$widget->getName()])) {
+            // @phpstan-ignore-next-line assign.propertyType
+            $this->widgets[$widget->getName()] = get_class($widget);
+        }
+    }
+
+    /**
+     * Get the widgets that should be cached, keyed by the widget name.
+     *
+     * @return array<string, class-string<Widget>>
+     */
+    public function widgets(): array
+    {
+        return $this->widgets;
+    }
+
+    /**
+     * Determine if widgets should be automatically discovered.
+     */
+    public function shouldDiscoverWidgets(): bool
+    {
+        return get_class($this) === __CLASS__ && static::$shouldDiscoverWidgets;
+    }
+
+    /**
+     * Discover the widgets for the application.
+     *
+     * @return array<string, class-string<Widget>>
+     */
+    public function discoverWidgets(): array
+    {
+        return (new LazyCollection($this->discoverWidgetsWithin()))
+            ->flatMap(static function (string $directory): array {
+                $result = glob($directory, GLOB_ONLYDIR);
+
+                return $result !== false ? $result : [];
+            })
+            ->reject(static function (string $directory): bool {
+                return ! is_dir($directory);
+            })
+            ->pipe(static fn ($directories) => DiscoverWidgets::within(
+                $directories->all(),
+                static::getWidgetDiscoveryBasePath(),
+            ));
+    }
+
+    /**
+     * Register the migrations and publishing for the package.
+     */
+    protected function offerPublishing(): void
     {
         $this->publishes([
             __DIR__.'/../config/widget.php' => config_path('widget.php'),
@@ -106,38 +236,9 @@ class WidgetServiceProvider extends ServiceProvider
     /**
      * Get the discovered widgets for the application.
      *
-     * @return array
+     * @return array<string, class-string<Widget>>
      */
-    public function getWidgets()
-    {
-        if ($this->app->widgetsAreCached()) {
-            $cache = require $this->app->getCachedWidgetsPath();
-
-            return $cache[get_class($this)] ?? [];
-        } else {
-            return array_merge_recursive(
-                $this->discoveredWidgets(),
-                $this->widgets()
-            );
-        }
-    }
-
-    /**
-     * Get the widgets that should be cached.
-     *
-     * @return array<int, class-string<\Honed\Widget\Widget>>
-     */
-    public function widgets()
-    {
-        return $this->widgets;
-    }
-
-    /**
-     * Get the discovered widgets for the application.
-     *
-     * @return array
-     */
-    protected function discoveredWidgets()
+    protected function discoveredWidgets(): array
     {
         return $this->shouldDiscoverWidgets()
             ? $this->discoverWidgets()
@@ -145,92 +246,24 @@ class WidgetServiceProvider extends ServiceProvider
     }
 
     /**
-     * Determine if widgets should be automatically discovered.
-     *
-     * @return bool
-     */
-    public function shouldDiscoverWidgets()
-    {
-        return get_class($this) === __CLASS__ && static::$shouldDiscoverWidgets;
-    }
-
-    /**
-     * Discover the widgets for the application.
-     *
-     * @return array
-     */
-    public function discoverWidgets()
-    {
-        return (new LazyCollection($this->discoverWidgetsWithin()))
-            ->flatMap(function ($directory) {
-                return glob($directory, GLOB_ONLYDIR);
-            })
-            ->reject(function ($directory) {
-                return ! is_dir($directory);
-            })
-            ->pipe(fn ($directories) => DiscoverWidgets::within(
-                $directories->all(),
-                $this->widgetDiscoveryBasePath(),
-            ));
-    }
-
-    /**
      * Get the directories that should be used to discover widgets.
      *
      * @return iterable<int, string>
      */
-    protected function discoverWidgetsWithin()
+    protected function discoverWidgetsWithin(): iterable
     {
-        /** @var \Illuminate\Foundation\Application $app */
-        $app = $this->app;
-
         return static::$widgetDiscoveryPaths ?: [
-            $app->path('Widgets'),
+            $this->getApp()->path('Widgets'),
         ];
+
     }
 
     /**
-     * Add the given widget discovery paths to the application's widget discovery paths.
-     *
-     * @param  string|iterable<int, string>  $paths
-     * @return void
+     * Get the application instance.
      */
-    public static function addWidgetDiscoveryPaths(iterable|string $paths)
+    protected function getApp(): Application
     {
-        static::$widgetDiscoveryPaths = (new LazyCollection(static::$widgetDiscoveryPaths))
-            ->merge(is_string($paths) ? [$paths] : $paths)
-            ->unique()
-            ->values();
-    }
-
-    /**
-     * Set the globally configured widget discovery paths.
-     *
-     * @param  iterable<int, string>  $paths
-     * @return void
-     */
-    public static function setWidgetDiscoveryPaths($paths)
-    {
-        static::$widgetDiscoveryPaths = $paths;
-    }
-
-    /**
-     * Get the base path to be used during widget discovery.
-     *
-     * @return string
-     */
-    protected function widgetDiscoveryBasePath()
-    {
-        return base_path();
-    }
-
-    /**
-     * Disable widget discovery for the application.
-     *
-     * @return void
-     */
-    public static function disableWidgetDiscovery()
-    {
-        static::$shouldDiscoverWidgets = false;
+        /** @var Application */
+        return $this->app;
     }
 }

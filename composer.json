@@ -44,9 +44,9 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/",
-            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
-            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+            "App\\": "workbench/app/",
+            "Database\\Factories\\": "workbench/database/factories/",
+            "Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "scripts": {
@@ -75,7 +75,8 @@
         "lint": [
             "@php vendor/bin/pint --ansi",
             "@php vendor/bin/phpstan analyse --verbose --ansi"
-        ]
+        ],
+        "artisan": "vendor/bin/testbench"
     },
     "config": {
         "sort-packages": true,

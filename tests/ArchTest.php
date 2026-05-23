@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Console\Command;
 
 arch('it will not use debugging functions')
@@ -28,9 +30,9 @@ arch('drivers')
     ->toImplement('Honed\Widget\Contracts\Driver');
 
 arch('events')
-        ->expect('Honed\Widget\Events')
-        ->toBeClasses();
+    ->expect('Honed\Widget\Events')
+    ->toBeClasses();
 
-arch('not strict')
+arch('strict')
     ->expect('Honed\Widget')
-    ->not->toUseStrictTypes();
+    ->toUseStrictTypes();

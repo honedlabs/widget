@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Commands;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
+use function trim;
+
 #[AsCommand(name: 'make:widget')]
-class WidgetMakeCommand extends GeneratorCommand
+class WidgetMakeCommand extends GeneratorCommand implements PromptsForMissingInput
 {
     /**
      * The console command name.
@@ -32,23 +37,18 @@ class WidgetMakeCommand extends GeneratorCommand
 
     /**
      * Get the stub file for the generator.
-     *
-     * @return string
      */
-    protected function getStub()
+    protected function getStub(): string
     {
         return $this->resolveStubPath('/stubs/honed.widget.stub');
     }
 
     /**
      * Resolve the fully-qualified path to the stub.
-     *
-     * @param  string  $stub
-     * @return string
      */
-    protected function resolveStubPath($stub)
+    protected function resolveStubPath(string $stub): string
     {
-        return file_exists($customPath = $this->laravel->basePath(\trim($stub, '/')))
+        return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
             ? $customPath
             : __DIR__.'/../..'.$stub;
     }
@@ -57,9 +57,8 @@ class WidgetMakeCommand extends GeneratorCommand
      * Get the default namespace for the class.
      *
      * @param  string  $rootNamespace
-     * @return string
      */
-    protected function getDefaultNamespace($rootNamespace)
+    protected function getDefaultNamespace($rootNamespace): string
     {
         return $rootNamespace.'\Widgets';
     }

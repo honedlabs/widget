@@ -1,65 +1,35 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Contracts;
 
 interface Driver
 {
     /**
-     * Get all widgets for a given scope and group.
+     * Get all widgets for a given scope.
      *
-     * @param  string|null  $scope
-     * @param  string|null  $group
      * @return array<int,mixed>
      */
-    public function get($scope, $group = null);
+    public function get(mixed $scope): array;
 
     /**
-     * Determine if a widget exists for a given scope, widget name and group.
-     *
-     * @param  string  $widget
-     * @param  string  $scope
-     * @param  string|null  $group
-     * @return bool
+     * Set a widget for a given scope and widget name.
      */
-    public function exists($widget, $scope, $group = null);
+    public function set(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): void;
 
     /**
-     * Set a widget for a given scope, widget name and group.
-     *
-     * @param  string  $widget
-     * @param  string  $scope
-     * @param  string|null  $group
-     * @param  int  $order
-     * @return void
+     * Update the data and position of a widget for a given scope and widget.
      */
-    public function set($widget, $scope, $group = null, $order = 0);
+    public function update(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): bool;
 
     /**
-     * Update the order of a widget for a given scope, widget name and group.
-     *
-     * @param  string  $widget
-     * @param  string  $scope
-     * @param  string|null  $group
-     * @param  int  $order
-     * @return bool
+     * Delete a widget for a given scope and widget.
      */
-    public function update($widget, $scope, $group = null, $order = 0);
+    public function delete(mixed $widget, mixed $scope): bool;
 
     /**
-     * Delete a widget for a given scope, widget name and group.
-     *
-     * @param  string  $widget
-     * @param  string  $scope
-     * @param  string|null  $group
-     * @return void
+     * Purge all widgets by scope from storage.
      */
-    public function delete($widget, $scope, $group = null);
-
-    /**
-     * Purge all widgets by name from storage.
-     *
-     * @param  string|iterable<int, string>  ...$widgets
-     * @return void
-     */
-    // public function purge(...$widgets);
+    // public function purge(mixed $scope): void;
 }

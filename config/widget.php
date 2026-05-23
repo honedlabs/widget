@@ -1,32 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
     |--------------------------------------------------------------------------
-    | Group Prefix
+    | Model
     |--------------------------------------------------------------------------
     |
-    | Here you can specify the default prefix to be used to group widgets for
-    | different purposes. By default, widgets are not grouped and so have no
-    | prefix.
+    | Here you will specify the model class that should be used when utilising
+    | the `HasWidgets` trait on your models. It is recommended that you extend
+    | the `Honed\Widget\Models\Widget` model if you intend on overriding the
+    | default behaviour.
     |
-    */
-    'group' => null,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Inertia Retrieval
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure how you would like Inertia.JS to retrieve dynamic
-    | data from the server, and pass it to your pages by default. The
-    |
-    | Supported: "sync", "defer", "lazy"
+    | This will only be used when using the `database` driver.
     |
     */
 
-    'inertia' => 'sync',
+    'model' => Honed\Widget\Models\Widget::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -55,27 +47,21 @@ return [
     */
 
     'drivers' => [
-
         'array' => [
             'driver' => 'array',
         ],
-
         'cache' => [
             'driver' => 'cache',
             'expiration' => null,
         ],
-
         'cookie' => [
             'driver' => 'cookie',
             'expiration' => 60 * 24 * 365,
         ],
-
         'database' => [
             'driver' => 'database',
             'connection' => null,
             'table' => 'widgets',
         ],
-
     ],
-
 ];

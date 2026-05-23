@@ -1,35 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Migrations;
 
+use Honed\Widget\Concerns\InteractsWithDatabase;
 use Illuminate\Database\Migrations\Migration;
 
 abstract class WidgetMigration extends Migration
 {
+    use InteractsWithDatabase;
+
     /**
      * Get the migration connection name.
-     *
-     * @return string
      */
-    public function getConnection()
+    public function getConnection(): string
     {
-        /** @var string|null */
-        $connection = config('widget.drivers.database.connection');
-
-        // @phpstan-ignore-next-line return.type
-        return ($connection === null || $connection === 'null')
-            ? config('database.default')
-            : $connection;
-    }
-
-    /**
-     * Get the migration table name.
-     *
-     * @return string
-     */
-    public function getTable()
-    {
-        /** @var string */
-        return config('widget.drivers.database.table', 'widgets');
+        return $this->getConnectionName();
     }
 }

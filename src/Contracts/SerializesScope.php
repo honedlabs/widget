@@ -1,13 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Contracts;
 
 interface SerializesScope
 {
     /**
      * Serialize the scope for storage.
-     *
-     * @return string
      */
-    public function serializeScope();
+    public function serializeScope(): string;
 }

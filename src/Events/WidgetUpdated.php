@@ -1,5 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Events;
 
-class WidgetUpdated {}
+class WidgetUpdated extends WidgetCreated
+{
+    //
+}

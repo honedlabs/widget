@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Commands;
 
 use Illuminate\Console\Command;
@@ -26,7 +28,7 @@ class WidgetClearCommand extends Command
     /**
      * The filesystem instance.
      *
-     * @var \Illuminate\Filesystem\Filesystem
+     * @var Filesystem
      */
     protected $files;
 
@@ -42,10 +44,8 @@ class WidgetClearCommand extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $this->files->delete($this->laravel->getCachedWidgetsPath());
 

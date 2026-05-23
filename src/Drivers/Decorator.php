@@ -1,32 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Drivers;
 
+use Honed\Widget\Concerns\Resolvable;
+use Honed\Widget\Contracts\CanListWidgets;
 use Honed\Widget\Contracts\Driver;
-use Honed\Widget\Contracts\WidgetScopeable;
+use Honed\Widget\Events\WidgetCreated;
 use Honed\Widget\Events\WidgetDeleted;
 use Honed\Widget\Events\WidgetUpdated;
-use Honed\Widget\ScopedWidgetRetrieval;
+use Honed\Widget\PendingWidgetInteraction;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Traits\Macroable;
+use RuntimeException;
 
 class Decorator implements Driver
 {
     use Macroable {
         __call as macroCall;
     }
+    use Resolvable;
 
     /**
-     * The driver name.
+     * The store's name.
      *
      * @var string
      */
     protected $name;
 
     /**
-     * The driver being decorated.
+     * The driver instance.
      *
-     * @var \Honed\Widget\Contracts\Driver
+     * @var Driver
      */
     protected $driver;
 
@@ -40,23 +47,20 @@ class Decorator implements Driver
     /**
      * The container instance.
      *
-     * @var \Illuminate\Contracts\Container\Container
+     * @var Container
      */
     protected $container;
 
     /**
      * Create a new driver decorator instance.
      *
-     * @param  string  $name
-     * @param  \Honed\Widget\Contracts\Driver  $driver
-     * @param  (callable():mixed)|null  $defaultScopeResolver
-     * @param  \Illuminate\Contracts\Container\Container  $container
+     * @param  (callable():mixed)  $defaultScopeResolver
      */
     public function __construct(
-        $name,
-        $driver,
-        $defaultScopeResolver,
-        $container
+        string $name,
+        Driver $driver,
+        callable $defaultScopeResolver,
+        Container $container
     ) {
         $this->name = $name;
         $this->driver = $driver;
@@ -65,89 +69,74 @@ class Decorator implements Driver
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function get($scope, $group = null)
-    {
-        $this->driver->get($scope, $group);
-
-        // Event::dispatch(new WidgetRetrieved($widget, $scope, $item));
-
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function set($widget, $scope, $group = null, $order = 0)
-    {
-        $widget = $this->resolveWidget($widget);
-
-        $scope = $this->resolveScope($scope);
-
-        $this->driver->set($widget, $scope, $group, $order);
-
-        Event::dispatch(new WidgetUpdated($widget, $scope));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function update($widget, $scope, $group = null, $order = 0)
-    {
-        $widget = $this->resolveWidget($widget);
-
-        $scope = $this->resolveScope($scope);
-
-        $outcome = $this->driver->update($widget, $scope, $group, $order);
-
-        Event::dispatch(new WidgetUpdated($widget, $scope, $group, $order));
-
-        return $outcome;
-
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function delete($widget, $scope, $group = null)
-    {
-        $widget = $this->resolveWidget($widget);
-
-        $scope = $this->resolveScope($scope);
-
-        $this->driver->delete($widget, $scope, $group);
-
-        Event::dispatch(new WidgetDeleted($widget, $scope));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function exists($widget, $scope, $group = null)
-    {
-        $widget = $this->resolveWidget($widget);
-
-        $scope = $this->resolveScope($scope);
-    }
-
-    // /**
-    //  * {@inheritdoc}
-    //  */
-    // public function purge(...$widgets)
-    // {
-    //     $this->driver->purge(...$widgets);
-    //
-
-    /**
-     * Retrieve the widget's class.
+     * Dynamically call the underlying driver instance.
      *
      * @param  string  $name
-     * @return \Honed\Widget\Contracts\Widget
+     * @param  array<mixed>  $parameters
+     * @return mixed
      */
-    public function instance($name)
+    public function __call($name, $parameters)
     {
-        $this->container->make($name);
+        if (static::hasMacro($name)) {
+            return $this->macroCall($name, $parameters);
+        }
+
+        return tap(new PendingWidgetInteraction($this), function ($retrieval) use ($name) {
+            if ($name !== 'for' && ($scope = ($this->defaultScopeResolver)()) !== null) {
+                $retrieval->for($scope);
+            }
+        })->{$name}(...$parameters);
+    }
+
+    /**
+     * Create a new pending widget interaction instance.
+     */
+    public function for(mixed $scope = null): PendingWidgetInteraction
+    {
+        return (new PendingWidgetInteraction($this))
+            ->for($scope ?? $this->defaultScope());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get(mixed $scope): array
+    {
+        return $this->driver->get($scope);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function set(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): void
+    {
+        $this->driver->set($widget, $scope, $data, $position);
+
+        Event::dispatch(new WidgetCreated($widget, $scope, $data, $position));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function update(mixed $widget, mixed $scope, mixed $data = null, mixed $position = null): bool
+    {
+        $outcome = $this->driver->update($widget, $scope, $data, $position);
+
+        Event::dispatch(new WidgetUpdated($widget, $scope, $data, $position));
+
+        return $outcome;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete(mixed $widget, mixed $scope): bool
+    {
+        $outcome = $this->driver->delete($widget, $scope);
+
+        Event::dispatch(new WidgetDeleted($widget, $scope));
+
+        return $outcome;
     }
 
     /**
@@ -162,45 +151,9 @@ class Decorator implements Driver
     }
 
     /**
-     * Resolve the widget by name.
-     *
-     * @param  string  $widget
-     * @return string
-     */
-    protected function resolveWidget($widget)
-    {
-        // return $this->
-    }
-
-    /**
-     * Resolve the scope.
-     *
-     * @param  mixed  $scope
-     * @return mixed
-     */
-    protected function resolveScope($scope)
-    {
-        return $scope instanceof WidgetScopeable
-            ? $scope->toWidgetIdentifier($this->name)
-            : $scope;
-    }
-
-    /**
-     * Retrieve the default scope.
-     *
-     * @return mixed
-     */
-    protected function defaultScope()
-    {
-        return ($this->defaultScopeResolver)();
-    }
-
-    /**
      * Get the underlying driver instance.
-     *
-     * @return \Honed\Widget\Contracts\Driver
      */
-    public function getDriver()
+    public function getDriver(): Driver
     {
         return $this->driver;
     }
@@ -208,10 +161,9 @@ class Decorator implements Driver
     /**
      * Set the container instance used by the decorator.
      *
-     * @param  \Illuminate\Contracts\Container\Container  $container
      * @return $this
      */
-    public function setContainer($container)
+    public function setContainer(Container $container): static
     {
         $this->container = $container;
 
@@ -219,22 +171,27 @@ class Decorator implements Driver
     }
 
     /**
-     * Dynamically create a pending feature interaction.
-     *
-     * @param  string  $name
-     * @param  array<mixed>  $parameters
-     * @return mixed
+     * Retrieve the default scope.
      */
-    public function __call($name, $parameters)
+    protected function defaultScope(): mixed
     {
-        if (static::hasMacro($name)) {
-            return $this->macroCall($name, $parameters);
+        return ($this->defaultScopeResolver)();
+    }
+
+    /**
+     * Check if the driver supports listing widgets.
+     *
+     * @throws RuntimeException
+     */
+    protected function checkIfCanListWidgets(): CanListWidgets
+    {
+        if (! $this->driver instanceof CanListWidgets) {
+            throw new RuntimeException(
+                "The [{$this->name}] driver does not support listing widgets."
+            );
         }
 
-        return tap(new ScopedWidgetRetrieval($this), function ($retrieval) use ($name) {
-            if ($name !== 'for' && ($scope = ($this->defaultScopeResolver)()) !== null) {
-                $retrieval->for($scope);
-            }
-        })->{$name}(...$parameters);
+        /** @var CanListWidgets */
+        return $this->driver;
     }
 }

@@ -1,25 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 use Honed\Widget\Migrations\WidgetMigration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends WidgetMigration
+return new class() extends WidgetMigration
 {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create($this->getTable(), function (Blueprint $table) {
+        Schema::create($this->getTableName(), function (Blueprint $table) {
             $table->id();
-            $table->string('group')->nullable();
-            $table->string('name');
+            $table->string('widget');
             $table->string('scope');
-            $table->integer('order')->default(0);
+            $table->text('data')->nullable();
+            $table->string('position')->nullable();
             $table->timestamps();
-
-            $table->unique(['group', 'name', 'scope']);
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends WidgetMigration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->getTable());
+        Schema::dropIfExists($this->getTableName());
     }
 };

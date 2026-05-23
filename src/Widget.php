@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget;
 
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 
 abstract class Widget
@@ -28,31 +31,40 @@ abstract class Widget
     abstract public function getValue();
 
     /**
-     * Get the name of the widget to be used.
-     *
-     * @return string|null
+     * Create a new widget instance.
      */
-    public function name()
+    public static function make(): static
     {
-        return null;
+        return resolve(static::class);
+    }
+
+    /**
+     * Set the callback to guess the widget name.
+     *
+     * @param  callable(static):string  $callback
+     */
+    public static function guessWidgetNameUsing(callable $callback): void
+    {
+        static::$guessWidgetNameUsing = $callback;
     }
 
     /**
      * Get the name of the widget to be used.
-     *
-     * @return string
      */
-    public function getName()
+    public function getName(): string
     {
-        return $this->name ?? $this->name() ?? $this->guessWidgetName();
+        return $this->name ?? $this->guessWidgetName();
     }
+
+    // public static function register()
+    // {
+    //     App::getProvider(WidgetServiceProvider::class)->add
+    // }
 
     /**
      * Guess the widget name.
-     *
-     * @return string
      */
-    public function guessWidgetName()
+    public function guessWidgetName(): string
     {
         if (static::$guessWidgetNameUsing) {
             return call_user_func(static::$guessWidgetNameUsing, $this);
@@ -60,23 +72,6 @@ abstract class Widget
 
         return Str::of(static::class)
             ->basename()
-            ->kebab()
             ->value();
-    }
-
-    /**
-     * Set the callback to guess the widget name.
-     *
-     * @param  callable(static):string  $callback
-     * @return void
-     */
-    public static function guessWidgetNameUsing($callback)
-    {
-        static::$guessWidgetNameUsing = $callback;
-    }
-
-    public static function register()
-    {
-        //
     }
 }

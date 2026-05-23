@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Workbench\App\Widgets;
+namespace App\Widgets;
 
 use Honed\Widget\Widget;
 

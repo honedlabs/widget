@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Commands;
 
-use Closure;
+use Honed\Widget\WidgetServiceProvider;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Support\Collection;
-use ReflectionFunction;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'widget:list')]
@@ -19,7 +19,7 @@ class WidgetListCommand extends Command
      */
     protected $signature = 'widget:list
                             {--widget= : Filter the widgets by name}
-                            {--json : Output the widgets and listeners as JSON}';
+                            {--json : Output the widgets as JSON}';
 
     /**
      * The console command description.
@@ -29,22 +29,12 @@ class WidgetListCommand extends Command
     protected $description = "List the application's widgets";
 
     /**
-     * The events dispatcher resolver callback.
-     *
-     * @var \Closure|null
-     */
-    protected static $widgetsResolver;
-
-    /**
      * Execute the console command.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $widgets = $this->getWidgets()->sortKeys();
 
-        dd($widgets);
         if ($widgets->isEmpty()) {
             if ($this->option('json')) {
                 $this->output->writeln('[]');
@@ -55,7 +45,7 @@ class WidgetListCommand extends Command
             return;
         }
 
-        if ($this->option('json')) {
+        if ($this->shouldDisplayJson()) {
             $this->displayJson($widgets);
         } else {
             $this->displayForCli($widgets);
@@ -63,48 +53,45 @@ class WidgetListCommand extends Command
     }
 
     /**
-     * Display events and their listeners in JSON.
+     * Display widgets in JSON.
      *
-     * @param  \Illuminate\Support\Collection  $widgets
-     * @return void
+     * @param  Collection<string, class-string<\Honed\Widget\Widget>>  $widgets
      */
-    protected function displayJson($widgets)
+    protected function displayJson(Collection $widgets): void
     {
-        $data = $widgets->map(function ($listeners, $widget) {
+        $data = $widgets->map(function ($widget) {
             return [
-                'widget' => strip_tags($this->appendWidgetInterfaces($widget)),
-                'listeners' => collect($listeners)->map(fn ($listener) => strip_tags($listener))->values()->all(),
+                'widget' => $widget,
             ];
         })->values();
 
-        $this->output->writeln($data->toJson());
+        $this->output->writeln($data->toJson(JSON_PRETTY_PRINT));
     }
 
     /**
-     * Display the events and their listeners for the CLI.
+     * Display the widgets for the CLI.
      *
-     * @return void
+     * @param  Collection<string, class-string<\Honed\Widget\Widget>>  $widgets
      */
-    protected function displayForCli(Collection $events)
+    protected function displayForCli(Collection $widgets): void
     {
         $this->newLine();
 
-        $events->each(function ($listeners, $event) {
-            $this->components->twoColumnDetail($this->appendEventInterfaces($event));
-            $this->components->bulletList($listeners);
+        $widgets->each(function ($class, $name) {
+            $this->components->twoColumnDetail($name, $class);
         });
 
         $this->newLine();
     }
 
     /**
-     * Get all of the events and listeners configured for the application.
+     * Get all of the widgets configured for the application.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection<string, class-string<\Honed\Widget\Widget>>
      */
-    protected function getWidgets()
+    protected function getWidgets(): Collection
     {
-        $widgets = new Collection($this->getListenersOnDispatcher());
+        $widgets = new Collection($this->getRegisteredWidgets());
 
         if ($this->filteringByWidget()) {
             $widgets = $this->filterWidgets($widgets);
@@ -114,93 +101,54 @@ class WidgetListCommand extends Command
     }
 
     /**
-     * Get the event / listeners from the dispatcher object.
+     * Get the registered widgets.
      *
-     * @return array
+     * @return array<string, class-string<\Honed\Widget\Widget>>
      */
-    protected function getListenersOnDispatcher()
+    protected function getRegisteredWidgets(): array
     {
         $widgets = [];
 
-        foreach ($this->getRawListeners() as $widget => $rawListeners) {
-            dd($widget, $rawListeners);
-            foreach ($rawListeners as $rawListener) {
-                if (is_string($rawListener)) {
-                    $widgets[$widget][] = $this->appendListenerInterfaces($rawListener);
-                } elseif ($rawListener instanceof Closure) {
-                    $widgets[$widget][] = $this->stringifyClosure($rawListener);
-                } elseif (is_array($rawListener) && count($rawListener) === 2) {
-                    if (is_object($rawListener[0])) {
-                        $rawListener[0] = get_class($rawListener[0]);
-                    }
+        foreach ($this->laravel->getProviders(WidgetServiceProvider::class) as $provider) {
+            /** @var array<string, class-string<\Honed\Widget\Widget>> */
+            $providerWidgets = array_merge_recursive($provider->shouldDiscoverWidgets() ? $provider->discoverWidgets() : [], $provider->widgets());
 
-                    $widgets[$widget][] = $this->appendListenerInterfaces(implode('@', $rawListener));
-                }
-            }
+            $widgets = array_merge($widgets, $providerWidgets);
         }
 
         return $widgets;
     }
 
     /**
-     * Add the event implemented interfaces to the output.
+     * Filter the given widgets using the provided widget name filter.
      *
-     * @param  string  $widget
-     * @return string
+     * @param  Collection<string, class-string<\Honed\Widget\Widget>>  $widgets
+     * @return Collection<string, class-string<\Honed\Widget\Widget>>
      */
-    protected function appendWidgetInterfaces($widget)
-    {
-        if (! class_exists($widget)) {
-            return $widget;
-        }
-
-        $interfaces = class_implements($widget);
-
-        if (in_array(ShouldBroadcast::class, $interfaces)) {
-            $widget .= ' <fg=bright-blue>(ShouldBroadcast)</>';
-        }
-
-        return $widget;
-    }
-
-    /**
-     * Get a displayable string representation of a Closure listener.
-     *
-     * @return string
-     */
-    protected function stringifyClosure(Closure $rawListener)
-    {
-        $reflection = new ReflectionFunction($rawListener);
-
-        $path = str_replace([base_path(), DIRECTORY_SEPARATOR], ['', '/'], $reflection->getFileName() ?: '');
-
-        return 'Closure at: '.$path.':'.$reflection->getStartLine();
-    }
-
-    /**
-     * Filter the given events using the provided event name filter.
-     *
-     * @param  \Illuminate\Support\Collection  $widgets
-     * @return \Illuminate\Support\Collection
-     */
-    protected function filterWidgets($widgets)
+    protected function filterWidgets(Collection $widgets): Collection
     {
         if (! $widgetName = $this->option('widget')) {
             return $widgets;
         }
 
         return $widgets->filter(
-            fn ($listeners, $widget) => str_contains($widget, $widgetName)
+            static fn ($widget, $name) => str_contains($name, $widgetName)
         );
     }
 
     /**
-     * Determine whether the user is filtering by an event name.
-     *
-     * @return bool
+     * Determine whether the user is filtering by a widget name.
      */
-    protected function filteringByWidget()
+    protected function filteringByWidget(): bool
     {
         return filled($this->option('widget'));
+    }
+
+    /**
+     * Determine whether the user is displaying the widgets as JSON.
+     */
+    protected function shouldDisplayJson(): bool
+    {
+        return (bool) $this->option('json');
     }
 }

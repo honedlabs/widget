@@ -2,10 +2,27 @@
 
 namespace {{ namespace }};
 
-class {{ class }}
+use Honed\Widget\Widget;
+
+/**
+ * @template T
+ * 
+ * @extends \Honed\Widget\Widget<T>
+ */
+class {{ class }} extends Widget
 {
-    public function retrieve()
+    /**
+     * @param mixed $scope
+     * @param mixed $data
+     * @return mixed
+     */
+    public function getData(mixed $scope, mixed $data)
     {
         //
+    }
+
+    public function cast(): ?string
+    {
+        return null;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Commands;
 
 use Honed\Widget\WidgetServiceProvider;
@@ -26,7 +28,7 @@ class WidgetCacheCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $this->callSilent('widget:clear');
 
@@ -39,23 +41,19 @@ class WidgetCacheCommand extends Command
     }
 
     /**
-     * Get the widgets that should be cached.
-     *
-     * @return array
-     */
-    /**
      * Get all of the events and listeners configured for the application.
      *
-     * @return array
+     * @return array<string, class-string<\Honed\Widget\Widget>>
      */
-    protected function getWidgets()
+    protected function getWidgets(): array
     {
         $widgets = [];
 
         foreach ($this->laravel->getProviders(WidgetServiceProvider::class) as $provider) {
+            /** @var array<string, class-string<\Honed\Widget\Widget>> */
             $providerWidgets = array_merge_recursive($provider->shouldDiscoverWidgets() ? $provider->discoverWidgets() : [], $provider->widgets());
 
-            $widgets[get_class($provider)] = $providerWidgets;
+            $widgets = array_merge($widgets, $providerWidgets);
         }
 
         return $widgets;

@@ -1,36 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Honed\Widget\Events;
 
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Foundation\Events\Dispatchable;
 
 class WidgetDeleted
 {
-    use SerializesModels;
+    use Dispatchable;
 
     /**
-     * The widget name.
-     *
-     * @var string
+     * Create a new widget deleted event.
      */
-    public $widget;
-
-    /**
-     * The scope of the feature deletion.
-     *
-     * @var mixed
-     */
-    public $scope;
-
-    /**
-     * Create a new event instance.
-     *
-     * @param  string  $widget
-     * @param  mixed  $scope
-     */
-    public function __construct($widget, $scope)
-    {
-        $this->widget = $widget;
-        $this->scope = $scope;
-    }
+    public function __construct(
+        public mixed $widget,
+        public mixed $scope,
+    ) {}
 }
