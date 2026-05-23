@@ -89,6 +89,16 @@ class Widget extends Model
     }
 
     /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param  array<array-key, Model>  $models
+     */
+    public function newCollection(array $models = []): WidgetCollection
+    {
+        return new WidgetCollection($models);
+    }
+
+    /**
      * Get a new query builder instance for the connection.
      *
      * @return QueryBuilder
@@ -96,16 +106,5 @@ class Widget extends Model
     protected function newBaseQueryBuilder()
     {
         return new QueryBuilder($this->getConnection());
-    }
-
-    /**
-     * Create a new Eloquent Collection instance.
-     *
-     * @param  array<array-key, \Illuminate\Database\Eloquent\Model>  $models
-     * @return WidgetCollection
-     */
-    public function newCollection(array $models = []): WidgetCollection
-    {
-        return new WidgetCollection($models);
     }
 }
